@@ -12,6 +12,7 @@ func SetupRouter() *gin.Engine {
 
 	router.GET("/ifsc", controller.GetIfscCode)
 	router.POST("/ifsc", controller.PostIFSC)
+	router.DELETE("/ifsc", controller.DeleteAllEntry)
 
 	return router
 }

@@ -5,6 +5,7 @@ import (
 	model "bank-test-api/Models"
 	"database/sql"
 	"encoding/csv"
+	"fmt"
 	"io"
 	"os"
 	"strings"
@@ -36,6 +37,13 @@ func ReadCSV() ([]model.BankMaster, error) {
 		headerIndex[strings.ToLower(strings.TrimSpace(h))] = i
 	}
 
+	requiredHeaders := []string{"ifsc", "bank", "micr", "branch"}
+	for _, rh := range requiredHeaders {
+		if _, ok := headerIndex[rh]; !ok {
+			return nil, fmt.Errorf("The file doesn't have column: %s", rh)
+		}
+	}
+
 	var result []model.BankMaster
 	for {
 		records, err := reader.Read()
@@ -53,10 +61,15 @@ func ReadCSV() ([]model.BankMaster, error) {
 		}
 
 		data := model.BankMaster{
-			Bank:   records[headerIndex["bank"]],
-			Ifsc:   records[headerIndex["ifsc"]],
-			Micr:   records[headerIndex["micr"]],
-			Branch: records[headerIndex["branch"]],
+			Bank:     records[headerIndex["bank"]],
+			Ifsc:     records[headerIndex["ifsc"]],
+			Micr:     records[headerIndex["micr"]],
+			Branch:   records[headerIndex["branch"]],
+			Address:  records[headerIndex["address"]],
+			Contact:  records[headerIndex["contact"]],
+			City:     records[headerIndex["city"]],
+			District: records[headerIndex["district"]],
+			State:    records[headerIndex["state"]],
 		}
 
 		result = append(result, data)
@@ -79,7 +92,7 @@ func GetIfscCode(c *gin.Context) {
 func PostIFSC(c *gin.Context) {
 	data, err := ReadCSV()
 	if err != nil {
-		c.JSON(500, gin.H{"error": err.Error()})
+		c.JSON(500, gin.H{"Error": err.Error()})
 		return
 	}
 
@@ -99,4 +112,20 @@ func PostIFSC(c *gin.Context) {
 		"Status": "Data has been stored successfully.",
 		"rows":   len(data),
 	})
+}
+
+func DeleteAllEntry(c *gin.Context) {
+
+	result := config.DB.Exec("DELETE FROM bank_masters")
+
+	if result.Error != nil {
+		c.JSON(500, gin.H{"Error": result.Error.Error()})
+		return
+	}
+
+	c.JSON(201, gin.H{
+		"Status": "Data has been deleted successfully.",
+		"rows":   result.RowsAffected,
+	})
+
 }
