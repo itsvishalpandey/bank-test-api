@@ -12,6 +12,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 var DB *sql.DB
@@ -96,11 +97,20 @@ func PostIFSC(c *gin.Context) {
 		return
 	}
 
+	// To insert the entires batch wise in DB
+	// err = config.DB.Transaction(func(tx *gorm.DB) error {
+	// 	if err := tx.CreateInBatches(data, 100).Error; err != nil {
+	// 		return err
+	// 	}
+	// 	return nil
+	// })
+
+	// To insert the entires batchwise in DB and to also update the already present IFSC row
 	err = config.DB.Transaction(func(tx *gorm.DB) error {
-		if err := tx.CreateInBatches(data, 100).Error; err != nil {
-			return err
-		}
-		return nil
+		return tx.Clauses(
+			clause.OnConflict{Columns: []clause.Column{{Name: "ifsc"}},
+				DoUpdates: clause.AssignmentColumns([]string{"bank", "micr"}),
+			}).CreateInBatches(data, 100).Error
 	})
 
 	if err != nil {
