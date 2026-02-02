@@ -61,6 +61,11 @@ func ReadCSV() ([]model.BankMaster, error) {
 			continue
 		}
 
+		// Gives error if any IFSC column has no value
+		if strings.TrimSpace(records[headerIndex["ifsc"]]) == "" {
+			return nil, fmt.Errorf("IFSC cannot be empty")
+		}
+
 		data := model.BankMaster{
 			Bank:     records[headerIndex["bank"]],
 			Ifsc:     records[headerIndex["ifsc"]],
